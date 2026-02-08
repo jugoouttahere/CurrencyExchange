@@ -17,7 +17,8 @@ public class DataSourceConfig {
         DriverManagerDataSource ds = new DriverManagerDataSource();
 
         ds.setDriverClassName("org.sqlite.JDBC");
-        ds.setUrl("jdbc:sqlite:/opt/currency/db/currency.db");
+//        ds.setUrl("jdbc:sqlite:/opt/currency/db/currency.db");
+        ds.setUrl("jdbc:sqlite:C:/Users/Rostislav Ershov/Desktop/currency-db/currency.db");
 
         return ds;
     }

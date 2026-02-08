@@ -16,7 +16,7 @@ public class CurrencyDto {
         return new CurrencyDto(
                 currency.getId(),
                 currency.getCode(),
-                currency.getFullName(),
+                currency.getName(),
                 currency.getSign()
         );
     }

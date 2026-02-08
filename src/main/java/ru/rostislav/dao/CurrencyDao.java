@@ -29,6 +29,12 @@ public class CurrencyDao {
         return list.isEmpty() ? null : list.get(0);
     }
 
+    public Currency findById(int id) {
+        String sql = "SELECT id, code, full_name, sign FROM currencies WHERE id = ?";
+        List<Currency> list = jdbcTemplate.query(sql, new CurrencyRowMapper(), id);
+        return list.isEmpty() ? null : list.get(0);
+    }
+
     public Currency insert(String code, String name, String sign) {
         String sql = "INSERT INTO currencies (code, full_name, sign) VALUES (?, ?, ?)";
 
@@ -50,4 +56,5 @@ public class CurrencyDao {
 
         return new Currency(id, code, name, sign);
     }
+
 }
