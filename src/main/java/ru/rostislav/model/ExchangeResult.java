@@ -1,5 +1,12 @@
 package ru.rostislav.model;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import ru.rostislav.dto.CurrencyDto;
+import ru.rostislav.dto.ExchangeResultDto;
+
+@Getter
+@AllArgsConstructor
 public class ExchangeResult {
 
     private Currency from;
@@ -8,31 +15,13 @@ public class ExchangeResult {
     private double amount;
     private double convertedAmount;
 
-    public ExchangeResult(Currency from, Currency to, double rate, double amount, double convertedAmount) {
-        this.from = from;
-        this.to = to;
-        this.rate = rate;
-        this.amount = amount;
-        this.convertedAmount = convertedAmount;
-    }
-
-    public Currency getFrom() {
-        return from;
-    }
-
-    public Currency getTo() {
-        return to;
-    }
-
-    public double getRate() {
-        return rate;
-    }
-
-    public double getAmount() {
-        return amount;
-    }
-
-    public double getConvertedAmount() {
-        return convertedAmount;
+    public ExchangeResultDto toDto() {
+        return new ExchangeResultDto(
+                CurrencyDto.toDto(from),
+                CurrencyDto.toDto(to),
+                rate,
+                amount,
+                convertedAmount
+        );
     }
 }

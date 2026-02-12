@@ -5,40 +5,32 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
-import ru.rostislav.dto.ExchangeRateDto;
+import ru.rostislav.exception.ExchangeRateNotFoundException;
 import ru.rostislav.model.ExchangeRate;
 
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 
 @Repository
-public class ExchangeRateDao {
+public class ExchangeRateRepository {
+    private static final RowMapper<ExchangeRate> EXCHANGE_RATE_ROW_MAPPER = (rs, rowNum) -> new ExchangeRate(
+            rs.getInt("id"),
+            rs.getInt("base_currency_id"),
+            rs.getInt("target_currency_id"),
+            rs.getDouble("rate")
+    );
+
     private final JdbcTemplate jdbcTemplate;
 
-    public ExchangeRateDao(JdbcTemplate jdbcTemplate) {
+    public ExchangeRateRepository(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
     public ExchangeRate findByCurrencyIds(int baseId, int targetId) {
         String sql = "SELECT id, base_currency_id, target_currency_id, rate FROM exchange_rates WHERE base_currency_id = ? AND target_currency_id = ?";
 
-        List<ExchangeRate> list = jdbcTemplate.query(
-                sql,
-                new RowMapper<ExchangeRate>() {
-                    @Override
-                    public ExchangeRate mapRow(ResultSet rs, int rowNum) throws SQLException {
-                        return new ExchangeRate(
-                                rs.getInt("id"),
-                                rs.getInt("base_currency_id"),
-                                rs.getInt("target_currency_id"),
-                                rs.getDouble("rate")
-                        );
-                    }
-                },
-                baseId, targetId);
+        List<ExchangeRate> list = jdbcTemplate.query(sql, EXCHANGE_RATE_ROW_MAPPER, baseId, targetId);
 
         return list.isEmpty() ? null : list.get(0);
     }
@@ -46,18 +38,7 @@ public class ExchangeRateDao {
     public List<ExchangeRate> findAll() {
         String sql = "SELECT id, base_currency_id, target_currency_id, rate FROM exchange_rates";
 
-        return jdbcTemplate.query(sql,
-                new RowMapper<ExchangeRate>() {
-                    @Override
-                    public ExchangeRate mapRow(ResultSet rs, int rowNum) throws SQLException {
-                        return new ExchangeRate(
-                                rs.getInt("id"),
-                                rs.getInt("base_currency_id"),
-                                rs.getInt("target_currency_id"),
-                                rs.getDouble("rate")
-                        );
-                    }
-                });
+        return jdbcTemplate.query(sql, EXCHANGE_RATE_ROW_MAPPER);
     }
 
     public ExchangeRate insert(int baseCurrencyId, int targetCurrencyId, double rate) {
@@ -84,6 +65,16 @@ public class ExchangeRateDao {
                 targetCurrencyId,
                 rate
         );
+    }
+
+    public void updateRate(int baseId, int targetId, Double rate) {
+        String sql = "UPDATE exchange_rates SET rate = ? WHERE base_currency_id = ? AND target_currency_id = ?";
+
+        int updated = jdbcTemplate.update(sql, rate, baseId, targetId);
+
+        if (updated == 0) {
+            throw new ExchangeRateNotFoundException("Exchange rate not found");
+        }
     }
 
 }

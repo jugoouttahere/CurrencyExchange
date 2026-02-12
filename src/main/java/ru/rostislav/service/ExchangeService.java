@@ -1,66 +1,71 @@
 package ru.rostislav.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import ru.rostislav.dao.CurrencyDao;
-import ru.rostislav.dao.ExchangeRateDao;
-import ru.rostislav.exception.CurrencyNotFoundException;
+import ru.rostislav.dao.CurrencyRepository;
+import ru.rostislav.dao.ExchangeRateRepository;
 import ru.rostislav.exception.ExchangeRateNotFoundException;
 import ru.rostislav.model.Currency;
 import ru.rostislav.model.ExchangeRate;
 import ru.rostislav.model.ExchangeResult;
 
+@RequiredArgsConstructor
 @Service
 public class ExchangeService {
-    private final CurrencyDao currencyDao;
-    private final ExchangeRateDao exchangeRateDao;
+    private static final String USD_CURRENCY_CODE = "USD";
 
-    @Autowired
-    public ExchangeService(CurrencyDao currencyDao, ExchangeRateDao exchangeRateDao) {
-        this.currencyDao = currencyDao;
-        this.exchangeRateDao = exchangeRateDao;
+    private final CurrencyRepository currencyRepository;
+    private final ExchangeRateRepository exchangeRateRepository;
+
+    public ExchangeResult exchange(String baseCode, String targetCode, double amount) {
+
+        Currency base = findCurrency(baseCode.toUpperCase());
+        Currency target = findCurrency(targetCode.toUpperCase());
+
+        double rate = resolveRate(base, target);
+
+        return buildResult(base, target, rate, amount);
     }
 
-    public ExchangeResult exchange(String fromCode, String toCode, double amount) {
+    private Currency findCurrency(String code) {
+        return currencyRepository.findByCode(code);
+    }
 
-        Currency from = currencyDao.findByCode(fromCode);
-        if (from == null) {
-            throw new CurrencyNotFoundException("Currency not found: " + fromCode);
-        }
-
-        Currency to = currencyDao.findByCode(toCode);
-        if (to == null) {
-            throw new CurrencyNotFoundException("Currency not found: " + toCode);
-        }
-
-        ExchangeRate direct = exchangeRateDao.findByCurrencyIds(from.getId(), to.getId());
+    private double resolveRate(Currency base, Currency target) {
+        ExchangeRate direct = findDirectRate(base, target);
         if (direct != null) {
-            double result = amount * direct.getRate();
-            return new ExchangeResult(from, to, direct.getRate(), amount, result);
+            return direct.getRate();
         }
 
-        ExchangeRate reverse = exchangeRateDao.findByCurrencyIds(to.getId(), from.getId());
+        ExchangeRate reverse = findDirectRate(target, base);
         if (reverse != null) {
-            double rate = 1 / reverse.getRate();
-            double result = amount * rate;
-            return new ExchangeResult(from, to, rate, amount, result);
+            return 1 / reverse.getRate();
         }
 
-        Currency usd = currencyDao.findByCode("USD");
-        if (usd == null) {
-            throw new CurrencyNotFoundException("Base currency USD not found");
-        }
+        return resolveCrossRate(base, target);
+    }
 
-        ExchangeRate usdToFrom = exchangeRateDao.findByCurrencyIds(usd.getId(), from.getId());
-        ExchangeRate usdToTo = exchangeRateDao.findByCurrencyIds(usd.getId(), to.getId());
+    private ExchangeRate findDirectRate(Currency base, Currency target) {
+        return exchangeRateRepository.findByCurrencyIds(base.getId(), target.getId());
+    }
+
+    private double resolveCrossRate(Currency base, Currency target) {
+        Currency usd = currencyRepository.findByCode(USD_CURRENCY_CODE);
+
+        ExchangeRate usdToFrom = findDirectRate(usd, base);
+        ExchangeRate usdToTo = findDirectRate(usd, target);
+
         if (usdToFrom != null && usdToTo != null) {
-            double rate = usdToTo.getRate() / usdToFrom.getRate();
-            double result = amount * rate;
-            return new ExchangeResult(from, to, rate, amount, result);
+            return usdToTo.getRate() / usdToFrom.getRate();
         }
 
         throw new ExchangeRateNotFoundException(
-                "Exchange rate not found for " + fromCode + " to " + toCode
+                "Exchange rate not found for " + base.getCode() + " to " + target.getCode()
         );
+    }
+
+    private ExchangeResult buildResult(Currency base, Currency target, double rate, double amount) {
+        double convertedResult = amount * rate;
+        return new ExchangeResult(base, target, rate, amount, convertedResult);
     }
 }

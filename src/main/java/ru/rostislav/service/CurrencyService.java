@@ -2,11 +2,10 @@ package ru.rostislav.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import ru.rostislav.dao.CurrencyDao;
+import ru.rostislav.dao.CurrencyRepository;
 import ru.rostislav.dto.CurrencyDto;
+import ru.rostislav.exception.AlreadyExistsException;
 import ru.rostislav.exception.BadRequestException;
-import ru.rostislav.exception.CurrencyAlreadyExistsException;
-import ru.rostislav.exception.CurrencyNotFoundException;
 import ru.rostislav.model.Currency;
 
 import java.util.List;
@@ -14,15 +13,16 @@ import java.util.List;
 @Service
 public class CurrencyService {
 
-    private final CurrencyDao currencyDao;
+    private final CurrencyRepository currencyRepository;
 
     @Autowired
-    public CurrencyService(CurrencyDao currencyDao) {
-        this.currencyDao = currencyDao;
+    public CurrencyService(CurrencyRepository currencyRepository) {
+        this.currencyRepository = currencyRepository;
     }
 
-    public List<CurrencyDto> findAll() {
-        return currencyDao.findAll().stream()
+    public List<CurrencyDto> findAll(int limit, int offset) {
+        return currencyRepository.findAll(limit, offset)
+                .stream()
                 .map(CurrencyDto::toDto)
                 .toList();
     }
@@ -32,11 +32,7 @@ public class CurrencyService {
             throw new BadRequestException("Currency code is empty");
         }
 
-        Currency currency = currencyDao.findByCode(code);
-
-        if (currency == null) {
-            throw new CurrencyNotFoundException("Currency not found: " + code);
-        }
+        Currency currency = currencyRepository.findByCode(code);
 
         return CurrencyDto.toDto(currency);
     }
@@ -52,11 +48,11 @@ public class CurrencyService {
             throw new BadRequestException("Sign is empty");
         }
 
-        if (currencyDao.findByCode(code) != null) {
-            throw new CurrencyAlreadyExistsException("Currency with this code already exist");
+        if (currencyRepository.findByCode(code) != null) {
+            throw new AlreadyExistsException("Currency with this code already exist");
         }
 
-        Currency saved = currencyDao.insert(code, name, sign);
+        Currency saved = currencyRepository.insert(code, name, sign);
         return CurrencyDto.toDto(saved);
     }
 

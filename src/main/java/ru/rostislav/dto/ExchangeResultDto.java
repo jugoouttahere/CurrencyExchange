@@ -7,20 +7,9 @@ import ru.rostislav.model.ExchangeResult;
 @Getter
 @AllArgsConstructor
 public class ExchangeResultDto {
-    private String from;
-    private String to;
+    private CurrencyDto baseCurrency;
+    private CurrencyDto targetCurrency;
     private double rate;
     private double amount;
     private double result;
-
-    public static ExchangeResultDto toDto(ExchangeResult exchangeResult) {
-        return new ExchangeResultDto(
-                exchangeResult.getFrom().getCode(),
-                exchangeResult.getTo().getCode(),
-                exchangeResult.getRate(),
-                exchangeResult.getAmount(),
-                exchangeResult.getConvertedAmount()
-        );
-    }
-
 }

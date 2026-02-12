@@ -1,29 +1,24 @@
 package ru.rostislav.controller;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import ru.rostislav.dto.CurrencyDto;
 import ru.rostislav.service.CurrencyService;
 
 import java.util.List;
 
-@Controller
+@RequiredArgsConstructor
+@RestController
 public class CurrencyController {
     private final CurrencyService currencyService;
 
-    public CurrencyController(CurrencyService currencyService) {
-        this.currencyService = currencyService;
-    }
-
     @GetMapping("/currencies")
-    @ResponseBody
-    public List<CurrencyDto> getCurrencies() {
-        return currencyService.findAll();
+    public List<CurrencyDto> getCurrencies(@RequestParam(defaultValue = "50") int limit, @RequestParam(defaultValue = "0") int offset) {
+        return currencyService.findAll(limit, offset);
     }
 
     @GetMapping("/currency/{code}")
-    @ResponseBody
     public CurrencyDto getCurrency(@PathVariable String code) {
         return currencyService.findByCode(code);
 
@@ -31,7 +26,6 @@ public class CurrencyController {
 
     @PostMapping("/currencies")
     @ResponseStatus(HttpStatus.CREATED)
-    @ResponseBody
     public CurrencyDto createCurrency(@RequestParam String name, @RequestParam String code, @RequestParam String sign) {
         return currencyService.addCurrency(name, code, sign);
     }

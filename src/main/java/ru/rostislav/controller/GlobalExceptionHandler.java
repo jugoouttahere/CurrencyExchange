@@ -28,15 +28,9 @@ public class GlobalExceptionHandler {
         return new ErrorResponse(ex.getMessage());
     }
 
-    @ExceptionHandler(CurrencyAlreadyExistsException.class)
+    @ExceptionHandler(AlreadyExistsException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
-    public ErrorResponse handleCurrencyAlreadyExists(CurrencyAlreadyExistsException ex) {
-        return new ErrorResponse(ex.getMessage());
-    }
-
-    @ExceptionHandler(ExchangeRateAlreadyExistsException.class)
-    @ResponseStatus(HttpStatus.CONFLICT)
-    public ErrorResponse handleExchangeAlreadyExists(ExchangeRateAlreadyExistsException ex) {
+    public ErrorResponse handleAlreadyExists(AlreadyExistsException ex) {
         return new ErrorResponse(ex.getMessage());
     }
 
